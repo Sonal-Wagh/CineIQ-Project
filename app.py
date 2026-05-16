@@ -6,7 +6,8 @@ import plotly.express as px
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import gdown
 
-# ── Download artifacts from Google Drive ────────────────────────
+st.set_page_config(page_title="CineIQ", page_icon="🎬", layout="wide")
+
 ARTIFACTS_DIR = "artifacts"
 os.makedirs(ARTIFACTS_DIR, exist_ok=True)
 
@@ -24,13 +25,11 @@ FILES = {
 for filename, file_id in FILES.items():
     filepath = os.path.join(ARTIFACTS_DIR, filename)
     if not os.path.exists(filepath):
-        with st.spinner(f"Downloading {filename}..."):
-            gdown.download(
-                f"https://drive.google.com/uc?id={file_id}",
-                filepath, quiet=False
-            )
-
-st.set_page_config(page_title="CineIQ", page_icon="🎬", layout="wide")
+        st.info(f"Downloading {filename}...")
+        gdown.download(
+            f"https://drive.google.com/uc?id={file_id}",
+            filepath, quiet=False
+        )
 
 OUTPUT_DIR = ARTIFACTS_DIR
 
@@ -74,15 +73,12 @@ def run_pipeline(seed, user_id=1, alpha=0.5, n=10):
         return None
     idx  = title_to_idx[t]
     sims = sorted(enumerate(cosine_sim[idx]), key=lambda x: x[1], reverse=True)[1:80]
-
     c = tmdb_indexed.iloc[[i for i, _ in sims]].copy()
     c["content_score"] = [s for _, s in sims]
-
     ml = movies_df[["tmdbId", "movieId"]].dropna()
     if "id" in c.columns:
         c["tmdbId"] = c["id"].astype("Int64")
         c = c.merge(ml, on="tmdbId", how="left")
-
     c["svd_score"] = c.get("movieId", pd.Series([None] * len(c))).apply(
         lambda m: predict_rating(user_id, m) if pd.notnull(m) else 3.5)
     c["cn"] = normalize(c["content_score"])
@@ -125,7 +121,7 @@ if st.button("Get Recommendations"):
         with col1:
             st.subheader("Genre radar")
             all_g = [g2 for gl in res["genres_list"]
-                    for g2 in (gl if isinstance(gl, list) else [])]
+                     for g2 in (gl if isinstance(gl, list) else [])]
             if all_g:
                 gc   = pd.Series(all_g).value_counts().head(8)
                 cats = gc.index.tolist(); vals = gc.values.tolist()
@@ -133,14 +129,14 @@ if st.button("Get Recommendations"):
                 fig  = go.Figure(go.Scatterpolar(
                     r=vals, theta=cats, fill="toself", line_color="#5DCAA5"))
                 fig.update_layout(showlegend=False, height=300,
-                    margin=dict(l=20, r=20, t=20, b=20))
+                                  margin=dict(l=20, r=20, t=20, b=20))
                 st.plotly_chart(fig, use_container_width=True)
         with col2:
             st.subheader("Score breakdown")
             fig2 = px.bar(res.reset_index(), x="title",
-                    y=["content_score", "svd_score"],
-                    barmode="group", height=300,
-                    olor_discrete_sequence=["#5DCAA5", "#7F77DD"])
+                          y=["content_score", "svd_score"],
+                          barmode="group", height=300,
+                          color_discrete_sequence=["#5DCAA5", "#7F77DD"])
             fig2.update_xaxes(tickangle=45, tickfont_size=9)
             fig2.update_layout(margin=dict(l=5, r=5, t=5, b=70))
             st.plotly_chart(fig2, use_container_width=True)
