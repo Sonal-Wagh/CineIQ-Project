@@ -30,9 +30,9 @@ FILES = {
 #             f"https://drive.google.com/uc?id={file_id}",
 #             filepath, quiet=False
 #         )
-BASE = "artifacts"
+# BASE = "artifacts"
 
-cosine_sim = np.load(f"{BASE}/cosine_sim.npy")
+# cosine_sim = np.load(f"{BASE}/cosine_sim.npy")
 OUTPUT_DIR = ARTIFACTS_DIR
 
 @st.cache_resource
@@ -40,7 +40,7 @@ def load_all():
     cosine_sim    = np.load(f"{OUTPUT_DIR}/cosine_sim.npy")
     U             = np.load(f"{OUTPUT_DIR}/U.npy")
     Vt            = np.load(f"{OUTPUT_DIR}/Vt.npy")
-    reconstructed = U @ Vt
+    reconstructed = None
     with open(f"{OUTPUT_DIR}/user_enc.pkl",  "rb") as f: ue = pickle.load(f)
     with open(f"{OUTPUT_DIR}/movie_enc.pkl", "rb") as f: me = pickle.load(f)
     tmdb   = pd.read_csv(f"{OUTPUT_DIR}/tmdb_indexed.csv", index_col=0)
@@ -58,12 +58,23 @@ def safe_parse(v):
 
 tmdb_indexed["genres_list"] = tmdb_indexed["genres_list"].apply(safe_parse)
 
+# def predict_rating(user_id, movie_id):
+#     if user_id not in user_enc.classes_ or movie_id not in movie_enc.classes_:
+#         return 3.5
+#     u = user_enc.transform([user_id])[0]
+#     m = movie_enc.transform([movie_id])[0]
+#     return float(np.clip(reconstructed[u, m], 0.5, 5.0))
+
 def predict_rating(user_id, movie_id):
     if user_id not in user_enc.classes_ or movie_id not in movie_enc.classes_:
         return 3.5
+
     u = user_enc.transform([user_id])[0]
     m = movie_enc.transform([movie_id])[0]
-    return float(np.clip(reconstructed[u, m], 0.5, 5.0))
+
+    score = np.dot(U[u, :], Vt[:, m])
+
+    return float(np.clip(score, 0.5, 5.0))
 
 def normalize(s):
     mn, mx = s.min(), s.max()
