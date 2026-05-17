@@ -8,7 +8,7 @@ import gdown
 
 st.set_page_config(page_title="CineIQ", page_icon="🎬", layout="wide")
 
-ARTIFACTS_DIR = "artifacts"
+ARTIFACTS_DIR = "/tmp/cineiq_artifacts"
 os.makedirs(ARTIFACTS_DIR, exist_ok=True)
 
 FILES = {
