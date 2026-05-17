@@ -1,11 +1,8 @@
 streamlit
-fastapi
-uvicorn
 pandas
 numpy
 scikit-learn
 scipy
 plotly
-vaderSentiment
+vaderSentiment==3.3.2
 requests
-gdown
