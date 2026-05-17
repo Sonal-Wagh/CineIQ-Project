@@ -10,7 +10,6 @@ import gdown
 
 st.set_page_config(page_title="CineIQ", page_icon="🎬", layout="wide")
 
-# ── Download artifacts ───────────────────────────────────────────
 ARTIFACTS_DIR = "/tmp/cineiq_artifacts"
 os.makedirs(ARTIFACTS_DIR, exist_ok=True)
 
@@ -90,7 +89,6 @@ def run_pipeline(seed, user_id=1, alpha=0.5, n=10):
     c["final_score"] = 0.85 * c["ensemble_score"] + 0.15 * (c["sent"] + 1) / 2
     return c.nlargest(n, "final_score").reset_index(drop=True)
 
-# ── UI ───────────────────────────────────────────────────────────
 st.title("CineIQ 🎬")
 st.caption("Explainable hybrid movie recommendations")
 
