@@ -4,11 +4,11 @@ import pickle, ast, os
 import plotly.graph_objects as go
 import plotly.express as px
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-import gdown
+# import gdown
 
 st.set_page_config(page_title="CineIQ", page_icon="🎬", layout="wide")
 
-ARTIFACTS_DIR = "/tmp/cineiq_artifacts"
+ARTIFACTS_DIR = "."
 os.makedirs(ARTIFACTS_DIR, exist_ok=True)
 
 FILES = {
