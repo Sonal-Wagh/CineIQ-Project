@@ -22,15 +22,17 @@ FILES = {
     "title_to_idx.csv": "1EDDQD3-vF8Ts14WJDv_CIigy7WTXi28H",
 }
 
-for filename, file_id in FILES.items():
-    filepath = os.path.join(ARTIFACTS_DIR, filename)
-    if not os.path.exists(filepath):
-        st.info(f"Downloading {filename}...")
-        gdown.download(
-            f"https://drive.google.com/uc?id={file_id}",
-            filepath, quiet=False
-        )
+# for filename, file_id in FILES.items():
+#     filepath = os.path.join(ARTIFACTS_DIR, filename)
+#     if not os.path.exists(filepath):
+#         st.info(f"Downloading {filename}...")
+#         gdown.download(
+#             f"https://drive.google.com/uc?id={file_id}",
+#             filepath, quiet=False
+#         )
+BASE = "artifacts"
 
+cosine_sim = np.load(f"{BASE}/cosine_sim.npy")
 OUTPUT_DIR = ARTIFACTS_DIR
 
 @st.cache_resource
