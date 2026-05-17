@@ -1,8 +1,0 @@
-streamlit
-pandas
-numpy
-scikit-learn
-scipy
-plotly
-vaderSentiment==3.3.2
-requests
