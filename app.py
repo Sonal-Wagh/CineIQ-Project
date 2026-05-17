@@ -4,52 +4,51 @@ import pickle, ast, os
 import plotly.graph_objects as go
 import plotly.express as px
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-# import gdown
+from sklearn.metrics.pairwise import cosine_similarity
+import scipy.sparse as sp
+import gdown
 
 st.set_page_config(page_title="CineIQ", page_icon="🎬", layout="wide")
 
-ARTIFACTS_DIR = "."
+# ── Download artifacts ───────────────────────────────────────────
+ARTIFACTS_DIR = "/tmp/cineiq_artifacts"
 os.makedirs(ARTIFACTS_DIR, exist_ok=True)
 
 FILES = {
-    "cosine_sim.npy"  : "1oxnyuwfc6kI30HzA5Vuw3ofdZB4aRr_a",
-    "U.npy"           : "1rXSf3Duw1vFyGawaehUZHcq6eRjkY4sY",
-    "Vt.npy"          : "1jzYpaPgETtrABfimfG0paeu_hIqOQ3B3",
-    "user_enc.pkl"    : "19IAV3MsFHTnkgPSc-vppVwpS8ELFHPsh",
-    "movie_enc.pkl"   : "1HQSpFRDLMvMYGzxdTrIYI706EpxL3hXM",
-    "tmdb_indexed.csv": "16NQQLylfr7GGD3KBJquLZqKT5E4nz5AV",
-    "movies_df.csv"   : "1FsTBA6ZEYP6nS6QKnfXT6L2Kgjsf0Du9",
-    "title_to_idx.csv": "1EDDQD3-vF8Ts14WJDv_CIigy7WTXi28H",
+    "tfidf_matrix.npz"   : "1Vpnl2TB1alQo7TPeECvtwD58iuvZ1ItR",
+    "tfidf_vectorizer.pkl": "1dit9Gxluscf0ZU6Hw_Rk8jtrXfFe8QyB",
+    "user_enc.pkl"       : "19IAV3MsFHTnkgPSc-vppVwpS8ELFHPsh",
+    "movie_enc.pkl"      : "1HQSpFRDLMvMYGzxdTrIYI706EpxL3hXM",
+    "tmdb_indexed.csv"   : "16NQQLylfr7GGD3KBJquLZqKT5E4nz5AV",
+    "movies_df.csv"      : "1FsTBA6ZEYP6nS6QKnfXT6L2Kgjsf0Du9",
+    "title_to_idx.csv"   : "1EDDQD3-vF8Ts14WJDv_CIigy7WTXi28H",
 }
 
-# for filename, file_id in FILES.items():
-#     filepath = os.path.join(ARTIFACTS_DIR, filename)
-#     if not os.path.exists(filepath):
-#         st.info(f"Downloading {filename}...")
-#         gdown.download(
-#             f"https://drive.google.com/uc?id={file_id}",
-#             filepath, quiet=False
-#         )
-# BASE = "artifacts"
+for filename, file_id in FILES.items():
+    filepath = os.path.join(ARTIFACTS_DIR, filename)
+    if not os.path.exists(filepath):
+        st.info(f"Downloading {filename}...")
+        gdown.download(
+            f"https://drive.google.com/uc?id={file_id}",
+            filepath, quiet=False
+        )
 
-# cosine_sim = np.load(f"{BASE}/cosine_sim.npy")
 OUTPUT_DIR = ARTIFACTS_DIR
 
 @st.cache_resource
 def load_all():
-    cosine_sim    = np.load(f"{OUTPUT_DIR}/cosine_sim.npy")
-    U             = np.load(f"{OUTPUT_DIR}/U.npy")
-    Vt            = np.load(f"{OUTPUT_DIR}/Vt.npy")
-    reconstructed = None
+    tfidf_matrix = sp.load_npz(f"{OUTPUT_DIR}/tfidf_matrix.npz")
+    with open(f"{OUTPUT_DIR}/tfidf_vectorizer.pkl", "rb") as f:
+        tfidf = pickle.load(f)
     with open(f"{OUTPUT_DIR}/user_enc.pkl",  "rb") as f: ue = pickle.load(f)
     with open(f"{OUTPUT_DIR}/movie_enc.pkl", "rb") as f: me = pickle.load(f)
     tmdb   = pd.read_csv(f"{OUTPUT_DIR}/tmdb_indexed.csv", index_col=0)
     movies = pd.read_csv(f"{OUTPUT_DIR}/movies_df.csv")
     tidx   = pd.read_csv(f"{OUTPUT_DIR}/title_to_idx.csv", index_col=0).iloc[:, 0]
     va     = SentimentIntensityAnalyzer()
-    return cosine_sim, reconstructed, ue, me, tmdb, movies, tidx, va
+    return tfidf_matrix, tfidf, ue, me, tmdb, movies, tidx, va
 
-cosine_sim, reconstructed, user_enc, movie_enc, \
+tfidf_matrix, tfidf, user_enc, movie_enc, \
     tmdb_indexed, movies_df, title_to_idx, analyzer = load_all()
 
 def safe_parse(v):
@@ -58,45 +57,34 @@ def safe_parse(v):
 
 tmdb_indexed["genres_list"] = tmdb_indexed["genres_list"].apply(safe_parse)
 
-# def predict_rating(user_id, movie_id):
-#     if user_id not in user_enc.classes_ or movie_id not in movie_enc.classes_:
-#         return 3.5
-#     u = user_enc.transform([user_id])[0]
-#     m = movie_enc.transform([movie_id])[0]
-#     return float(np.clip(reconstructed[u, m], 0.5, 5.0))
-
-def predict_rating(user_id, movie_id):
-    if user_id not in user_enc.classes_ or movie_id not in movie_enc.classes_:
-        return 3.5
-
-    u = user_enc.transform([user_id])[0]
-    m = movie_enc.transform([movie_id])[0]
-
-    score = np.dot(U[u, :], Vt[:, m])
-
-    return float(np.clip(score, 0.5, 5.0))
-
 def normalize(s):
     mn, mx = s.min(), s.max()
     return (s - mn) / (mx - mn) if mx > mn else s * 0
+
+def get_content_sims(idx, n=80):
+    query_vec = tfidf_matrix[idx]
+    sims = cosine_similarity(query_vec, tfidf_matrix).flatten()
+    top_indices = np.argsort(sims)[::-1][1:n+1]
+    return [(i, sims[i]) for i in top_indices]
 
 def run_pipeline(seed, user_id=1, alpha=0.5, n=10):
     t = seed.lower()
     if t not in title_to_idx.index:
         return None
     idx  = title_to_idx[t]
-    sims = sorted(enumerate(cosine_sim[idx]), key=lambda x: x[1], reverse=True)[1:80]
+    sims = get_content_sims(idx, n=80)
+
     c = tmdb_indexed.iloc[[i for i, _ in sims]].copy()
     c["content_score"] = [s for _, s in sims]
+
     ml = movies_df[["tmdbId", "movieId"]].dropna()
     if "id" in c.columns:
         c["tmdbId"] = c["id"].astype("Int64")
         c = c.merge(ml, on="tmdbId", how="left")
-    c["svd_score"] = c.get("movieId", pd.Series([None] * len(c))).apply(
-        lambda m: predict_rating(user_id, m) if pd.notnull(m) else 3.5)
+
+    c["svd_score"] = 3.5
     c["cn"] = normalize(c["content_score"])
-    c["sn"] = normalize(c["svd_score"])
-    c["ensemble_score"] = (1 - alpha) * c["cn"] + alpha * c["sn"]
+    c["ensemble_score"] = c["cn"]
     c["sent"] = c["title"].apply(
         lambda t2: analyzer.polarity_scores(str(t2))["compound"])
     c["final_score"] = 0.85 * c["ensemble_score"] + 0.15 * (c["sent"] + 1) / 2
