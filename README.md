@@ -49,3 +49,6 @@ The engine is trained on industry-standard, large-scale datasets:
 2. **TMDB Metadata (Kaggle):** Cast, genres, and keywords for over 45K movies.
 3. **IMDB 50K Reviews (Kaggle):** Utilized for training the sentiment analysis models.
 
+## Demo Video
+   https://github.com/user-attachments/assets/5c6240cf-7593-4f9a-a4f9-b471e342618c
+
