@@ -2,12 +2,12 @@
 
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://cineiq-project-62i58kefughcosj6xxvatz.streamlit.app/#cine-iq)
 
-## 🎬 Problem Statement
+## Problem Statement
 Content discovery on modern streaming platforms is often opaque, biased toward promoted titles, and traps users in repetitive recommendation loops. **CineIQ** solves this by providing an open, explainable movie recommendation engine. It combines multiple machine learning strategies to deliver personalized, interpretable suggestions that evolve with your true taste over time.
 
 ---
 
-## ✨ Deliverables & Key Features
+## Deliverables & Key Features
 
 ### 1. Hybrid Recommendation Engine
 CineIQ balances your historical preferences with the actual content of the movies using a weighted ensemble:
@@ -32,7 +32,7 @@ A highly interactive frontend built with Streamlit and Plotly that visualizes yo
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 * **Machine Learning:** Python, scikit-learn, Surprise (SVD), Pandas, NumPy
 * **NLP & Explainability:** VADER, HuggingFace DistilBERT, LIME
@@ -42,7 +42,7 @@ A highly interactive frontend built with Streamlit and Plotly that visualizes yo
 
 ---
 
-## 📂 Datasets
+## Datasets
 
 The engine is trained on industry-standard, large-scale datasets:
 1. **MovieLens 25M:** [grouplens.org/datasets/movielens/25m](https://grouplens.org/datasets/movielens/25m/)
